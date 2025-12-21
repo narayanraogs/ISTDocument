@@ -1,0 +1,6 @@
+{
+    "PortNo": "9070",
+    "DatabasePath": "./data/document.db",
+    "LogPath": "./logs/server.log",
+    "BasePath": "/home/narayan/development/ISTDocument"
+}
