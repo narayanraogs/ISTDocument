@@ -106,6 +106,12 @@ class Sidebar extends StatelessWidget {
             selected: appState.currentRoute == 'generate_pdf',
           ),
           ListTile(
+            leading: const Icon(Icons.draw),
+            title: const Text('Signature Page'),
+            onTap: () => appState.navigateTo('generate_sign'),
+            selected: appState.currentRoute == 'generate_sign',
+          ),
+          ListTile(
             leading: const Icon(Icons.folder_open),
             title: const Text('Change Document'),
             onTap: () => appState.selectDocument(null), // Go back to dashboard/selection

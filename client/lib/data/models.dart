@@ -1,4 +1,6 @@
 export 'document_models.dart';
+export 'subsystem_models.dart';
+export 'content_models.dart';
 class ClientID {
   final String id;
 
@@ -52,6 +54,20 @@ class Ack {
     return Ack(
       ok: json['OK'] as bool? ?? false,
       message: json['Message'] as String? ?? '',
+    );
+  }
+}
+
+class PdfResponse {
+  final bool ok;
+  final String content; // Base64 content
+
+  PdfResponse({required this.ok, required this.content});
+
+  factory PdfResponse.fromJson(Map<String, dynamic> json) {
+    return PdfResponse(
+      ok: json['OK'] ?? false,
+      content: json['Content'] ?? '',
     );
   }
 }

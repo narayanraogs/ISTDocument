@@ -4,6 +4,9 @@ import '../providers/app_state.dart';
 import '../widgets/sidebar.dart';
 import '../services/api_service.dart';
 import 'document_info_screen.dart';
+import 'subsystem_info_screen.dart';
+import '../widgets/content_editors/content_editor_screen.dart';
+import '../widgets/generate_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -55,11 +58,15 @@ class HomeScreen extends StatelessWidget {
     switch (route) {
       case 'info_document':
         return const DocumentInfoScreen();
-      // Add other cases here
+      case 'info_subsystem':
+        return const SubsystemInfoScreen();
+      case 'generate_pdf':
+        return const GenerateScreen(isSignature: false);
+      case 'generate_sign':
+        return const GenerateScreen(isSignature: true);
       default:
-        return Center(
-          child: Text('Content for: $route'),
-        );
+        // Assume generic content editor for other routes
+        return ContentEditorScreen(subsectionKey: route);
     }
   }
 
