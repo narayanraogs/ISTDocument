@@ -18,7 +18,7 @@ endif
 # Directories and names
 CLIENT_DIR := client
 SERVER_DIR := server
-BINARY_NAME:= istDocument
+BINARY_NAME:= istDocument-server
 
 # --- Build Targets ---
 

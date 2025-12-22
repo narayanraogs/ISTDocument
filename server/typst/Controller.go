@@ -96,7 +96,7 @@ func InitializeNewDocument(id string, documentName string) (string, bool) {
 }
 
 func Compile(id string) ([]byte, bool) {
-	//	defer removeFolder(id)
+	defer removeFolder(id)
 	cmd := "typst"
 	options := make([]string, 0)
 	options = append(options, "compile")

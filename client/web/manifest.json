@@ -1,11 +1,11 @@
 {
-    "name": "ist_document",
-    "short_name": "ist_document",
+    "name": "client",
+    "short_name": "client",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "IST Document Generator Client",
+    "description": "A new Flutter project.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

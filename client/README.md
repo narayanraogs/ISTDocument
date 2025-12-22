@@ -1,6 +1,6 @@
-# ist_document
+# client
 
-IST Document Generator Client
+A new Flutter project.
 
 ## Getting Started
 
