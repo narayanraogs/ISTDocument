@@ -117,6 +117,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final ApiService _apiService = ApiService();
   List<String> _allDocuments = [];
   List<String> _filteredDocuments = [];
+  List<String> _spacecraftNames = [];
+  Set<String> _selectedSpacecraftFilters = {};
   bool _isLoading = true;
   String _errorMessage = '';
   final TextEditingController _searchController = TextEditingController();
@@ -148,15 +150,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _isLoading = false;
         if (response.ok) {
           _allDocuments = response.documentNames;
-          // Apply current filter
-          final query = _searchController.text.toLowerCase();
-          if (query.isEmpty) {
-            _filteredDocuments = _allDocuments;
-          } else {
-            _filteredDocuments = _allDocuments
-                .where((doc) => doc.toLowerCase().contains(query))
-                .toList();
-          }
+          _extractSpacecraftNames();
+          _filterDocuments();
         } else {
           _errorMessage = response.message;
         }
@@ -164,12 +159,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  void _extractSpacecraftNames() {
+    final names = <String>{};
+    for (var doc in _allDocuments) {
+      if (doc.contains('-')) {
+        names.add(doc.split('-').first);
+      }
+    }
+    _spacecraftNames = names.toList()..sort();
+  }
+
   void _filterDocuments() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      _filteredDocuments = _allDocuments
-          .where((doc) => doc.toLowerCase().contains(query))
-          .toList();
+      _filteredDocuments = _allDocuments.where((doc) {
+        final matchesQuery = doc.toLowerCase().contains(query);
+        final matchesSpacecraft =
+            _selectedSpacecraftFilters.isEmpty ||
+            (doc.contains('-') &&
+                _selectedSpacecraftFilters.contains(doc.split('-').first));
+        return matchesQuery && matchesSpacecraft;
+      }).toList();
     });
   }
 
@@ -470,6 +480,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         ),
+
+        // Spacecraft Filters
+        if (_spacecraftNames.isNotEmpty)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                const Text(
+                  'Spacecraft: ',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 8),
+                ..._spacecraftNames.map((name) {
+                  final isSelected = _selectedSpacecraftFilters.contains(name);
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: FilterChip(
+                      label: Text(name),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedSpacecraftFilters.add(name);
+                          } else {
+                            _selectedSpacecraftFilters.remove(name);
+                          }
+                          _filterDocuments();
+                        });
+                      },
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+
+        if (_spacecraftNames.isNotEmpty) const SizedBox(height: 8),
 
         // Document List
         Expanded(

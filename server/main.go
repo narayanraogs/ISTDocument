@@ -9,6 +9,7 @@ import (
 	"intDocument/server/database"
 	"io/fs"
 	"log"
+	"mime"
 )
 
 var Version string
@@ -18,6 +19,9 @@ var embeddedFiles embed.FS
 var cfgPath = flag.String("cfg", "/home/csrspdev/development/istdocument/config/config.json", "Config File Path")
 
 func init() {
+	mime.AddExtensionType(".ttf", "font/ttf")
+	mime.AddExtensionType(".otf", "font/otf")
+	mime.AddExtensionType(".wasm", "application/wasm")
 	flag.Parse()
 }
 

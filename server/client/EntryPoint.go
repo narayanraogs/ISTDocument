@@ -22,9 +22,9 @@ func Listen(web fs.FS, port string) {
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{"*"},
-		AllowMethods: []string{"POST", "OPTIONS", "GET"},
-		AllowHeaders: []string{"Origin", "Content-Type", "ClientID", "TimeStamp"},
-		MaxAge:       12 * time.Hour,
+		AllowMethods: []string{"*"},
+		AllowHeaders: []string{"*"},
+		MaxAge:       24 * time.Hour,
 	}))
 
 	r.POST("/getAllDocumentNames", getAllDocumentNames)

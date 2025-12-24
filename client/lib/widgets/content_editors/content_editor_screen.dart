@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:csv/csv.dart';
 import 'package:excel/excel.dart' hide Border;
+import 'package:universal_html/html.dart' as html;
 import '../../data/content_models.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
@@ -671,6 +672,20 @@ class _ContentEditorScreenState extends State<ContentEditorScreen> {
     );
   }
 
+  void _downloadFile(String fileName, List<int> bytes) {
+    if (kIsWeb) {
+      final blob = html.Blob([bytes]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      html.AnchorElement(href: url)
+        ..setAttribute("download", fileName)
+        ..click();
+      html.Url.revokeObjectUrl(url);
+    } else {
+      // Fallback or specific implementation for desktop if needed
+      // Currently focusing on Web as per instructions
+    }
+  }
+
   // ... (Other Editors)
 
   // ... (File Editor)
@@ -747,26 +762,49 @@ class _ContentEditorScreenState extends State<ContentEditorScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: () async {
-            FilePickerResult? result = await FilePicker.platform.pickFiles(
-              type: FileType.custom,
-              allowedExtensions: ['xlsx'],
-              withData: true,
-            );
+        Row(
+          children: [
+            OutlinedButton.icon(
+              onPressed: () async {
+                FilePickerResult? result = await FilePicker.platform.pickFiles(
+                  type: FileType.custom,
+                  allowedExtensions: ['xlsx'],
+                  withData: true,
+                );
 
-            if (result != null) {
-              final file = result.files.single;
-              if (file.bytes != null) {
-                setState(() {
-                  item.fileName = file.name;
-                  item.value = base64Encode(file.bytes!);
-                });
-              }
-            }
-          },
-          icon: const Icon(Icons.upload_file),
-          label: const Text("Upload Excel (.xlsx)"),
+                if (result != null) {
+                  final file = result.files.single;
+                  if (file.bytes != null) {
+                    setState(() {
+                      item.fileName = file.name;
+                      item.value = base64Encode(file.bytes!);
+                    });
+                  }
+                }
+              },
+              icon: const Icon(Icons.upload_file),
+              label: const Text("Upload Excel (.xlsx)"),
+            ),
+            const SizedBox(width: 16),
+            if (item.value.isNotEmpty)
+              OutlinedButton.icon(
+                onPressed: () {
+                  try {
+                    final bytes = base64Decode(item.value);
+                    final name = item.fileName.isNotEmpty
+                        ? item.fileName
+                        : 'document.xlsx';
+                    _downloadFile(name, bytes);
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Error preparing download")),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.download),
+                label: const Text("Download"),
+              ),
+          ],
         ),
       ],
     );
@@ -933,34 +971,57 @@ class _ContentEditorScreenState extends State<ContentEditorScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: () async {
-            FilePickerResult? result = await FilePicker.platform.pickFiles(
-              type: FileType.custom,
-              allowedExtensions: ['csv'],
-              withData: true,
-            );
+        Row(
+          children: [
+            OutlinedButton.icon(
+              onPressed: () async {
+                FilePickerResult? result = await FilePicker.platform.pickFiles(
+                  type: FileType.custom,
+                  allowedExtensions: ['csv'],
+                  withData: true,
+                );
 
-            if (result != null) {
-              final bytes = result.files.single.bytes;
-              if (bytes != null) {
-                // Decode utf8
-                try {
-                  final String content = utf8.decode(bytes);
-                  setState(() {
-                    item.value = content;
-                    // Auto-set filename if empty? could do but item.fileName logic isn't strictly used here
-                  });
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Error reading CSV file")),
-                  );
+                if (result != null) {
+                  final bytes = result.files.single.bytes;
+                  if (bytes != null) {
+                    // Decode utf8
+                    try {
+                      final String content = utf8.decode(bytes);
+                      setState(() {
+                        item.value = content;
+                        // Auto-set filename if empty? could do but item.fileName logic isn't strictly used here
+                      });
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Error reading CSV file")),
+                      );
+                    }
+                  }
                 }
-              }
-            }
-          },
-          icon: const Icon(Icons.table_view),
-          label: const Text("Upload CSV"),
+              },
+              icon: const Icon(Icons.table_view),
+              label: const Text("Upload CSV"),
+            ),
+            const SizedBox(width: 16),
+            if (item.value.isNotEmpty)
+              OutlinedButton.icon(
+                onPressed: () {
+                  try {
+                    final bytes = utf8.encode(item.value);
+                    final name = item.fileName.isNotEmpty
+                        ? item.fileName
+                        : 'table.csv';
+                    _downloadFile(name, bytes);
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Error downloading CSV")),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.download),
+                label: const Text("Download"),
+              ),
+          ],
         ),
       ],
     );

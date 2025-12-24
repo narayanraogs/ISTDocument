@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static final TextTheme _textTheme = GoogleFonts.interTextTheme();
+  static final TextTheme _textTheme = ThemeData.light().textTheme;
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -12,7 +11,9 @@ class AppTheme {
         seedColor: const Color(0xFF6750A4), // Deep Purple
         brightness: Brightness.light,
       ),
+      fontFamily: 'LocalRoboto',
       textTheme: _textTheme.apply(
+        fontFamily: 'LocalRoboto',
         bodyColor: const Color(0xFF1C1B1F),
         displayColor: const Color(0xFF1C1B1F),
       ),
@@ -47,7 +48,9 @@ class AppTheme {
         seedColor: const Color(0xFFD0BCFF), // Light Purple
         brightness: Brightness.dark,
       ),
+      fontFamily: 'LocalRoboto',
       textTheme: _textTheme.apply(
+        fontFamily: 'LocalRoboto',
         bodyColor: const Color(0xFFE6E1E5),
         displayColor: const Color(0xFFE6E1E5),
       ),
