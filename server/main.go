@@ -15,7 +15,7 @@ var Version string
 
 //go:embed all:web
 var embeddedFiles embed.FS
-var cfgPath = flag.String("cfg", "/home/narayan/development/ISTDocument/config/config.json", "Config File Path")
+var cfgPath = flag.String("cfg", "/home/csrspdev/development/istdocument/config/config.json", "Config File Path")
 
 func init() {
 	flag.Parse()
@@ -23,6 +23,7 @@ func init() {
 
 func main() {
 	fmt.Printf("Starting IST Document Generator server, Version: %s\n", Version)
+	fmt.Println("Config Path: ", *cfgPath)
 	err := config.ReadConfiguration(*cfgPath)
 	if err != nil {
 		log.Fatalf("Failed to read configuration: %v", err)

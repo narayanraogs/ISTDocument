@@ -14,7 +14,7 @@ func Connect() (string, bool) {
 	opts := []bitcask.Option{
 		bitcask.WithMaxValueSize(1024 * 1024 * 1024),
 	}
-	db, err = bitcask.Open(config.Config.DatabasePath, opts...)
+	db, err = bitcask.Open(config.Config.BasePath+config.Config.DatabasePath, opts...)
 	if err != nil {
 		fmt.Println("error opening database", err.Error())
 		return err.Error(), false

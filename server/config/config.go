@@ -30,5 +30,6 @@ func ReadConfiguration(path string) error {
 	if err != nil {
 		return fmt.Errorf("failed to decode config file: %w", err)
 	}
+	fmt.Printf("Config: %+v\n ", Config)
 	return nil
 }
