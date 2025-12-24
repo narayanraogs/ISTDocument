@@ -27,7 +27,7 @@ class HomeScreen extends StatelessWidget {
         children: [
           // Sidebar
           if (appState.isSidebarVisible) const Sidebar(),
-          
+
           // Vertical Divider
           if (appState.isSidebarVisible) const VerticalDivider(width: 1),
 
@@ -89,17 +89,16 @@ class HomeScreen extends StatelessWidget {
           const Spacer(),
           // User / Actions
           IconButton(
-            icon: Icon(state.themeMode == ThemeMode.light
-                ? Icons.dark_mode_outlined
-                : Icons.light_mode_outlined),
+            icon: Icon(
+              state.themeMode == ThemeMode.light
+                  ? Icons.dark_mode_outlined
+                  : Icons.light_mode_outlined,
+            ),
             onPressed: () => state.toggleTheme(),
             tooltip: 'Toggle Theme',
           ),
           const SizedBox(width: 8),
-          const CircleAvatar(
-             radius: 16,
-             child: Icon(Icons.person, size: 20),
-          ),
+          const CircleAvatar(radius: 16, child: Icon(Icons.person, size: 20)),
           const SizedBox(width: 16),
         ],
       ),
@@ -149,7 +148,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _isLoading = false;
         if (response.ok) {
           _allDocuments = response.documentNames;
-          _filteredDocuments = _allDocuments;
+          // Apply current filter
+          final query = _searchController.text.toLowerCase();
+          if (query.isEmpty) {
+            _filteredDocuments = _allDocuments;
+          } else {
+            _filteredDocuments = _allDocuments
+                .where((doc) => doc.toLowerCase().contains(query))
+                .toList();
+          }
         } else {
           _errorMessage = response.message;
         }
@@ -219,30 +226,200 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 if (name.isEmpty) return;
 
                 Navigator.pop(context); // Close dialog
-                
+
                 // Show loading indicator
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Creating document...')),
                 );
 
                 final appState = context.read<AppState>();
-                final result = await _apiService.addDocument(appState.clientId, name);
+                final result = await _apiService.addDocument(
+                  appState.clientId,
+                  name,
+                );
 
                 if (context.mounted) {
-                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                   if (result.ok) {
-                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(result.message), backgroundColor: Colors.green),
-                     );
-                     _fetchDocuments(); // Refresh list
-                   } else {
-                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(result.message), backgroundColor: Colors.red),
-                     );
-                   }
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  if (result.ok) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(result.message),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    await _fetchDocuments(); // Refresh list
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(result.message),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               },
               child: const Text('Create'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCopyDocumentDialog(BuildContext context, String originalName) {
+    final TextEditingController nameController = TextEditingController(
+      text: '$originalName-Copy',
+    );
+
+    Future<void> handleCopy() async {
+      final newName = nameController.text.trim();
+      if (newName.isEmpty) return;
+
+      Navigator.pop(context); // Close dialog
+
+      // Show loading indicator
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Copying document...')));
+
+      final appState = context.read<AppState>();
+      final result = await _apiService.copyDocument(
+        appState.clientId,
+        originalName,
+        newName,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        if (result.ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Refresh and open
+          await _fetchDocuments();
+          if (context.mounted) {
+            context.read<AppState>().selectDocument(newName);
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Copy Document'),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(
+              labelText: 'New Document Name',
+              hintText: 'Enter new name',
+              border: OutlineInputBorder(),
+            ),
+            autofocus: true,
+            onSubmitted: (_) => handleCopy(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(onPressed: handleCopy, child: const Text('Copy')),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteDocumentDialog(BuildContext context, String documentName) {
+    final TextEditingController passwordController = TextEditingController();
+
+    Future<void> handleDelete() async {
+      final password = passwordController.text.trim();
+      if (password.isEmpty) return;
+
+      Navigator.pop(context); // Close dialog
+
+      // Show loading indicator
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Deleting document...')));
+
+      final appState = context.read<AppState>();
+      final result = await _apiService.deleteDocument(
+        appState.clientId,
+        documentName,
+        password,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        if (result.ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message),
+              backgroundColor: Colors.green,
+            ),
+          );
+          await _fetchDocuments(); // Refresh list
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Delete $documentName?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'This action cannot be undone. Please enter the administrator password to confirm.',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.lock),
+                ),
+                autofocus: true,
+                onSubmitted: (_) => handleDelete(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: handleDelete,
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Delete'),
             ),
           ],
         );
@@ -309,7 +486,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.folder_open, size: 64, color: Theme.of(context).colorScheme.outline),
+          Icon(
+            Icons.folder_open,
+            size: 64,
+            color: Theme.of(context).colorScheme.outline,
+          ),
           const SizedBox(height: 16),
           Text(
             _allDocuments.isEmpty
@@ -348,9 +529,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
             final docName = _filteredDocuments[index];
             return Card(
               child: InkWell(
+                // ignore: missing_return
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
                   context.read<AppState>().selectDocument(docName);
+                },
+                onSecondaryTapUp: (details) {
+                  final position = RelativeRect.fromRect(
+                    Rect.fromPoints(
+                      details.globalPosition,
+                      details.globalPosition,
+                    ),
+                    Offset.zero & MediaQuery.of(context).size,
+                  );
+                  showMenu(
+                    context: context,
+                    position: position,
+                    items: [
+                      const PopupMenuItem(
+                        value: 'copy',
+                        child: Row(
+                          children: [
+                            Icon(Icons.content_copy, size: 20),
+                            SizedBox(width: 8),
+                            Text('Copy'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, size: 20, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Delete', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ).then((value) {
+                    if (value == 'copy') {
+                      _showCopyDocumentDialog(context, docName);
+                    } else if (value == 'delete') {
+                      _showDeleteDocumentDialog(context, docName);
+                    }
+                  });
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -365,7 +588,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         child: Icon(
                           Icons.description,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -387,6 +612,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ],
                         ),
+                      ),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert),
+                        onSelected: (value) {
+                          if (value == 'copy') {
+                            _showCopyDocumentDialog(context, docName);
+                          } else if (value == 'delete') {
+                            _showDeleteDocumentDialog(context, docName);
+                          }
+                        },
+                        itemBuilder: (BuildContext context) =>
+                            <PopupMenuEntry<String>>[
+                              const PopupMenuItem<String>(
+                                value: 'copy',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.content_copy, size: 20),
+                                    SizedBox(width: 8),
+                                    Text('Copy'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete,
+                                      size: 20,
+                                      color: Colors.red,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                       ),
                     ],
                   ),

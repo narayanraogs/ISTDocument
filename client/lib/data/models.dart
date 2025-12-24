@@ -1,6 +1,7 @@
 export 'document_models.dart';
 export 'subsystem_models.dart';
 export 'content_models.dart';
+
 class ClientID {
   final String id;
 
@@ -24,7 +25,8 @@ class GetAllDocumentsResponse {
     return GetAllDocumentsResponse(
       ok: json['OK'] as bool? ?? false,
       message: json['Message'] as String? ?? '',
-      documentNames: (json['DocumentNames'] as List<dynamic>?)
+      documentNames:
+          (json['DocumentNames'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],
@@ -38,10 +40,25 @@ class AddDocumentRequest {
 
   AddDocumentRequest({required this.id, required this.name});
 
+  Map<String, dynamic> toJson() => {'ID': id, 'Name': name};
+}
+
+class CopyDocumentRequest {
+  final String oldName;
+  final String newName;
+  final String id;
+
+  CopyDocumentRequest({
+    required this.oldName,
+    required this.newName,
+    required this.id,
+  });
+
   Map<String, dynamic> toJson() => {
-        'ID': id,
-        'Name': name,
-      };
+    'OldName': oldName,
+    'NewName': newName,
+    'ID': id,
+  };
 }
 
 class Ack {
@@ -58,6 +75,15 @@ class Ack {
   }
 }
 
+class DeleteDocumentRequest {
+  final String name;
+  final String password;
+
+  DeleteDocumentRequest({required this.name, required this.password});
+
+  Map<String, dynamic> toJson() => {'Name': name, 'Password': password};
+}
+
 class PdfResponse {
   final bool ok;
   final String content; // Base64 content
@@ -65,9 +91,6 @@ class PdfResponse {
   PdfResponse({required this.ok, required this.content});
 
   factory PdfResponse.fromJson(Map<String, dynamic> json) {
-    return PdfResponse(
-      ok: json['OK'] ?? false,
-      content: json['Content'] ?? '',
-    );
+    return PdfResponse(ok: json['OK'] ?? false, content: json['Content'] ?? '');
   }
 }

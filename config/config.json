@@ -2,5 +2,6 @@
     "PortNo": "9070",
     "DatabasePath": "/document.db",
     "LogPath": "/server.log",
-    "BasePath": "/home/csrspdev/Documents/ISTDocument"
+    "BasePath": "/home/csrspdev/Documents/ISTDocument",
+    "DeletePassword": "payloadCheckout"
 }

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:csv/csv.dart';
+import 'package:excel/excel.dart' hide Border;
 import '../../data/content_models.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
@@ -700,12 +702,47 @@ class _ContentEditorScreenState extends State<ContentEditorScreen> {
                     : "No Excel File Selected",
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              Text(
-                item.value.isNotEmpty
-                    ? "${(item.value.length / 1024).toStringAsFixed(1)} KB"
-                    : "",
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              if (item.value.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Text(
+                  "Preview (First Sheet):",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  constraints: const BoxConstraints(maxHeight: 300),
+                  color: Colors.white,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: FutureBuilder<List<List<dynamic>>>(
+                        future: _parseExcel(item.value),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          if (snapshot.hasError) {
+                            return Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                'Error parsing Excel: ${snapshot.error}',
+                              ),
+                            );
+                          }
+                          final rows = snapshot.data ?? [];
+                          if (rows.isEmpty) return const Text("Empty Sheet");
+                          return _buildSimpleTable(rows);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -732,6 +769,42 @@ class _ContentEditorScreenState extends State<ContentEditorScreen> {
           label: const Text("Upload Excel (.xlsx)"),
         ),
       ],
+    );
+  }
+
+  Future<List<List<dynamic>>> _parseExcel(String base64Content) async {
+    if (base64Content.isEmpty) return [];
+    try {
+      final bytes = base64Decode(base64Content);
+      var excel = Excel.decodeBytes(bytes);
+      if (excel.tables.isEmpty) return [];
+      final table = excel.tables[excel.tables.keys.first];
+      if (table == null) return [];
+
+      // Convert Excel rows to simple List<List<dynamic>>
+      // Limit to first 50 rows for performance in preview
+      return table.rows.take(50).map((row) {
+        return row.map((cell) => cell?.value ?? '').toList();
+      }).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Widget _buildSimpleTable(List<List<dynamic>> rows) {
+    if (rows.isEmpty) return const SizedBox.shrink();
+    return DataTable(
+      columns: rows.first
+          .map((e) => DataColumn(label: Text(e.toString())))
+          .toList(),
+      rows: rows.skip(1).map((row) {
+        return DataRow(
+          cells: row.map((cell) => DataCell(Text(cell.toString()))).toList(),
+        );
+      }).toList(),
+      headingRowHeight: 40,
+      dataRowMinHeight: 30,
+      dataRowMaxHeight: 40,
     );
   }
   // ... (Common Fields, Image Editor, Table Editor)
@@ -809,7 +882,6 @@ class _ContentEditorScreenState extends State<ContentEditorScreen> {
   }
 
   Widget _buildTableEditor(ContentItem item) {
-    // ... (Previous Implementation)
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -825,11 +897,39 @@ class _ContentEditorScreenState extends State<ContentEditorScreen> {
             borderRadius: BorderRadius.circular(4),
             color: Colors.grey.shade100,
           ),
-          child: Text(
-            item.value.isEmpty ? "No CSV Loaded" : item.value,
-            maxLines: 10,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontFamily: 'monospace'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (item.value.isNotEmpty)
+                Container(
+                  constraints: const BoxConstraints(maxHeight: 300),
+                  color: Colors.white,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Builder(
+                        builder: (context) {
+                          try {
+                            final rows = const CsvToListConverter().convert(
+                              item.value,
+                            );
+                            if (rows.isEmpty) return const Text("Empty CSV");
+                            return _buildSimpleTable(rows);
+                          } catch (e) {
+                            return const Text("Error parsing CSV data");
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                )
+              else
+                const Text(
+                  "No CSV Loaded",
+                  style: TextStyle(fontFamily: 'monospace'),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 16),

@@ -26,14 +26,14 @@ class ApiService {
         return GetAllDocumentsResponse(
           ok: false,
           message: 'Server error: ${response.statusCode}',
-          documentNames: []
+          documentNames: [],
         );
       }
     } catch (e) {
       return GetAllDocumentsResponse(
         ok: false,
         message: 'Connection error: $e',
-        documentNames: []
+        documentNames: [],
       );
     }
   }
@@ -45,7 +45,9 @@ class ApiService {
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: jsonEncode(AddDocumentRequest(id: clientId, name: documentName).toJson()),
+        body: jsonEncode(
+          AddDocumentRequest(id: clientId, name: documentName).toJson(),
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -58,14 +60,49 @@ class ApiService {
     }
   }
 
-  Future<DocumentDetailsResponse> getDocumentDetails(String clientId, String documentName) async {
+  Future<Ack> copyDocument(
+    String clientId,
+    String oldName,
+    String newName,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/copyDocument'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(
+          CopyDocumentRequest(
+            id: clientId,
+            oldName: oldName,
+            newName: newName,
+          ).toJson(),
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        return Ack.fromJson(jsonDecode(response.body));
+      } else {
+        return Ack(ok: false, message: 'Server error: ${response.statusCode}');
+      }
+    } catch (e) {
+      return Ack(ok: false, message: 'Connection error: $e');
+    }
+  }
+
+  Future<DocumentDetailsResponse> getDocumentDetails(
+    String clientId,
+    String documentName,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/getDocumentDetails'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: jsonEncode(AddDocumentRequest(id: clientId, name: documentName).toJson()),
+        body: jsonEncode(
+          AddDocumentRequest(id: clientId, name: documentName).toJson(),
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -84,8 +121,12 @@ class ApiService {
     }
   }
 
-  Future<Ack> addDocumentDetails(String clientId, String documentName, DocumentDetails details) async {
-     try {
+  Future<Ack> addDocumentDetails(
+    String clientId,
+    String documentName,
+    DocumentDetails details,
+  ) async {
+    try {
       final request = DocumentDetailsRequest(
         id: clientId,
         documentName: documentName,
@@ -110,14 +151,19 @@ class ApiService {
     }
   }
 
-  Future<SubsystemDetailsResponse> getSubsystemDetails(String clientId, String documentName) async {
+  Future<SubsystemDetailsResponse> getSubsystemDetails(
+    String clientId,
+    String documentName,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/getSubsystemDetails'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: jsonEncode(AddDocumentRequest(id: clientId, name: documentName).toJson()),
+        body: jsonEncode(
+          AddDocumentRequest(id: clientId, name: documentName).toJson(),
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -136,7 +182,11 @@ class ApiService {
     }
   }
 
-  Future<Ack> addSubsystemDetails(String clientId, String documentName, SubsystemDetails details) async {
+  Future<Ack> addSubsystemDetails(
+    String clientId,
+    String documentName,
+    SubsystemDetails details,
+  ) async {
     try {
       final request = SubsystemDetailsRequest(
         id: clientId,
@@ -165,7 +215,11 @@ class ApiService {
     }
   }
 
-  Future<ContentResponse> getContent(String clientId, String documentName, String subsection) async {
+  Future<ContentResponse> getContent(
+    String clientId,
+    String documentName,
+    String subsection,
+  ) async {
     try {
       final request = ContentRequest(
         id: clientId,
@@ -201,7 +255,12 @@ class ApiService {
     }
   }
 
-  Future<Ack> addContent(String clientId, String documentName, String subsection, List<ContentItem> items) async {
+  Future<Ack> addContent(
+    String clientId,
+    String documentName,
+    String subsection,
+    List<ContentItem> items,
+  ) async {
     try {
       final request = AddContentRequest(
         id: clientId,
@@ -228,43 +287,88 @@ class ApiService {
     }
   }
 
-  Future<PdfResponse> compileDocument(String clientId, String documentName) async {
+  Future<PdfResponse> compileDocument(
+    String clientId,
+    String documentName,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/compileDocument'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: jsonEncode(AddDocumentRequest(id: clientId, name: documentName).toJson()),
+        body: jsonEncode(
+          AddDocumentRequest(id: clientId, name: documentName).toJson(),
+        ),
       );
 
       if (response.statusCode == 200) {
         return PdfResponse.fromJson(jsonDecode(response.body));
       } else {
-        return PdfResponse(ok: false, content: 'Server error: ${response.statusCode}');
+        return PdfResponse(
+          ok: false,
+          content: 'Server error: ${response.statusCode}',
+        );
       }
     } catch (e) {
       return PdfResponse(ok: false, content: 'Connection error: $e');
     }
   }
 
-  Future<PdfResponse> getSignaturePage(String clientId, String documentName) async {
+  Future<PdfResponse> getSignaturePage(
+    String clientId,
+    String documentName,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/getSignaturePage'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: jsonEncode(AddDocumentRequest(id: clientId, name: documentName).toJson()),
+        body: jsonEncode(
+          AddDocumentRequest(id: clientId, name: documentName).toJson(),
+        ),
       );
 
       if (response.statusCode == 200) {
         return PdfResponse.fromJson(jsonDecode(response.body));
       } else {
-        return PdfResponse(ok: false, content: 'Server error: ${response.statusCode}');
+        return PdfResponse(
+          ok: false,
+          content: 'Server error: ${response.statusCode}',
+        );
       }
     } catch (e) {
       return PdfResponse(ok: false, content: 'Connection error: $e');
+    }
+  }
+
+  Future<Ack> deleteDocument(
+    String clientId,
+    String documentName,
+    String password,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/deleteDocument'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(
+          DeleteDocumentRequest(
+            name: documentName,
+            password: password,
+          ).toJson(),
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        return Ack.fromJson(jsonDecode(response.body));
+      } else {
+        return Ack(ok: false, message: 'Server error: ${response.statusCode}');
+      }
+    } catch (e) {
+      return Ack(ok: false, message: 'Connection error: $e');
     }
   }
 }

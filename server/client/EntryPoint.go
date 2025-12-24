@@ -3,6 +3,7 @@ package client
 import (
 	"encoding/base64"
 	"fmt"
+	"intDocument/server/config"
 	"intDocument/server/database"
 	"intDocument/server/typst"
 
@@ -328,17 +329,30 @@ func copyDocument(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, ack)
 }
 
+type DeleteDocumentRequest struct {
+	Name     string `json:"Name"`
+	Password string `json:"Password"`
+}
+
 func deleteDocument(c *gin.Context) {
-	var deleteDocument AddDocument
+	var deleteRequest DeleteDocumentRequest
 	var ack Ack
-	if err := c.BindJSON(&deleteDocument); err != nil {
+	if err := c.BindJSON(&deleteRequest); err != nil {
 		ack.OK = false
 		ack.Message = "Bad Request"
 		c.IndentedJSON(http.StatusOK, ack)
 		return
 	}
-	fmt.Println("Request", deleteDocument)
-	msg, ok := database.DeleteDocument(deleteDocument.Name)
+	fmt.Println("Request Delete", deleteRequest.Name)
+
+	if deleteRequest.Password != config.Config.DeletePassword {
+		ack.OK = false
+		ack.Message = "Invalid Password"
+		c.IndentedJSON(http.StatusOK, ack)
+		return
+	}
+
+	msg, ok := database.DeleteDocument(deleteRequest.Name)
 	if !ok {
 		ack.OK = false
 		ack.Message = msg

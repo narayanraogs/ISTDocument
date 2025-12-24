@@ -8,10 +8,11 @@ import (
 
 // Configuration structure defines the available config options
 type Configuration struct {
-	PortNo       string `json:"PortNo"`
-	DatabasePath string `json:"DatabasePath"`
-	LogPath      string `json:"LogPath"`
-	BasePath     string `json:"BasePath"`
+	PortNo         string `json:"PortNo"`
+	DatabasePath   string `json:"DatabasePath"`
+	LogPath        string `json:"LogPath"`
+	BasePath       string `json:"BasePath"`
+	DeletePassword string `json:"DeletePassword"`
 }
 
 // Global Config variable

@@ -4,7 +4,11 @@ import 'providers/app_state.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 
+import 'package:flutter/services.dart';
+
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  BrowserContextMenu.disableContextMenu();
   runApp(const MyApp());
 }
 
@@ -14,9 +18,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AppState()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => AppState())],
       child: Consumer<AppState>(
         builder: (context, appState, child) {
           return MaterialApp(

@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"go.mills.io/bitcask/v2"
 )
@@ -196,18 +197,21 @@ func DeleteDocument(documentName string) (string, bool) {
 	}
 	var newNames = make([]string, 0)
 	for i := 0; i < int(length); i++ {
-		data, err := l.Pop()
+		data, err := l.Index(int64(i))
 		if err != nil {
 			return "Cannot read Document Names", false
 		}
 		name := string(data)
-		if name != documentName {
+		if len(strings.TrimSpace(name)) > 0 && name != documentName {
 			newNames = append(newNames, name)
 		}
 	}
+	for i := 0; i < int(length); i++ {
+		l.Pop()
+	}
 	db.Sync()
-	for _, name := range newNames {
-		l.Append(bitcask.Value(name))
+	for i := 0; i < len(newNames); i++ {
+		l.Append(bitcask.Value(newNames[i]))
 	}
 	db.Sync()
 	return "", true
