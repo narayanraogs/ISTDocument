@@ -3,5 +3,6 @@
     "DatabasePath": "/document.db",
     "LogPath": "/server.log",
     "BasePath": "/home/user/Documents/ISTDocument",
-    "DeletePassword": "changeMe"
+    "DeletePassword": "changeMe",
+    "OllamaURL": "http://localhost:11434"
 }
