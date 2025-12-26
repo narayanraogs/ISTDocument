@@ -13,6 +13,7 @@ type Configuration struct {
 	LogPath        string `json:"LogPath"`
 	BasePath       string `json:"BasePath"`
 	DeletePassword string `json:"DeletePassword"`
+	OllamaURL      string `json:"OllamaURL"`
 }
 
 // Global Config variable
@@ -31,6 +32,11 @@ func ReadConfiguration(path string) error {
 	if err != nil {
 		return fmt.Errorf("failed to decode config file: %w", err)
 	}
+
+	if Config.OllamaURL == "" {
+		Config.OllamaURL = "http://localhost:11434"
+	}
+
 	fmt.Printf("Config: %+v\n ", Config)
 	return nil
 }

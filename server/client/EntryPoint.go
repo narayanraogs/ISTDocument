@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"intDocument/server/config"
 	"intDocument/server/database"
+	"intDocument/server/handlers"
 	"intDocument/server/typst"
 
 	"io/fs"
@@ -40,6 +41,8 @@ func Listen(web fs.FS, port string) {
 
 	r.POST("/compileDocument", compileDocument)
 	r.POST("/getSignaturePage", getSignaturePage)
+
+	r.POST("/processDesignDoc", handlers.ProcessDesignDoc)
 
 	// Use NoRoute to serve static files to avoid conflict with API
 	r.NoRoute(func(c *gin.Context) {

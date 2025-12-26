@@ -60,6 +60,37 @@ class ApiService {
     }
   }
 
+  Future<Ack> processDesignDoc(
+    String clientId,
+    String documentName,
+    List<int> fileBytes,
+    String fileName,
+  ) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/processDesignDoc'),
+      );
+      request.fields['id'] = clientId;
+      request.fields['name'] = documentName;
+      request.files.add(
+        http.MultipartFile.fromBytes('file', fileBytes, filename: fileName),
+      );
+
+      final response = await request.send();
+      final respStr = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        var jsonResponse = jsonDecode(respStr);
+        return Ack(ok: jsonResponse['ok'], message: jsonResponse['message']);
+      } else {
+        return Ack(ok: false, message: 'Server error: ${response.statusCode}');
+      }
+    } catch (e) {
+      return Ack(ok: false, message: 'Connection error: $e');
+    }
+  }
+
   Future<Ack> copyDocument(
     String clientId,
     String oldName,

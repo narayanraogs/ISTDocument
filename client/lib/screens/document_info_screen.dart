@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../data/models.dart';
 import '../providers/app_state.dart';
@@ -264,6 +265,12 @@ class _DocumentInfoScreenState extends State<DocumentInfoScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      OutlinedButton.icon(
+                        onPressed: _autoPopulateFromPDF,
+                        icon: const Icon(Icons.picture_as_pdf),
+                        label: const Text('Auto-Populate from Design Doc'),
+                      ),
+                      const SizedBox(width: 16),
                       FilledButton.icon(
                         onPressed: _saveData,
                         icon: const Icon(Icons.save),
@@ -291,5 +298,65 @@ class _DocumentInfoScreenState extends State<DocumentInfoScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _autoPopulateFromPDF() async {
+    final appState = context.read<AppState>();
+    if (appState.selectedDocument == null) return;
+
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      withData: true,
+    );
+
+    if (result != null) {
+      // PlatformFile file = result.files.first;
+      // In Flutter Web, file.path is null. We must use bytes.
+      // In desktop, we can use bytes too if loaded.
+      // 'withData: true' ensures bytes are loaded.
+
+      final bytes = result.files.first.bytes;
+      final name = result.files.first.name;
+
+      if (bytes == null) {
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to read file data')),
+          );
+        }
+        return;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Uploading and processing PDF... This may take a while.')),
+        );
+      }
+
+      final ack = await _apiService.processDesignDoc(
+        appState.clientId,
+        appState.selectedDocument!,
+        bytes.toList(),
+        name,
+      );
+
+      if (mounted) {
+         ScaffoldMessenger.of(context).hideCurrentSnackBar();
+         ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(ack.message),
+            backgroundColor: ack.ok ? Colors.green : Colors.red,
+          ),
+        );
+        if (ack.ok) {
+          // Reload data to show changes?
+          // The changes happen in DB sections (Intro, SubsystemDetails), not DocumentDetails.
+          // But user might want to see them.
+          // Since this screen is "Document Info", maybe we should stay here.
+          // The user can navigate to "Introduction" or "Subsystem" tabs to see changes.
+        }
+      }
+    }
   }
 }
