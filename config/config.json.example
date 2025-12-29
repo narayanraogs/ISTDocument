@@ -4,5 +4,6 @@
     "LogPath": "/server.log",
     "BasePath": "/home/user/Documents/ISTDocument",
     "DeletePassword": "changeMe",
-    "OllamaURL": "http://localhost:11434"
+    "OllamaURL": "http://localhost:11434",
+    "OllamaModel": "llama3"
 }
