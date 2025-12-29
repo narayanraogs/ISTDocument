@@ -62,8 +62,10 @@ func ProcessDesignDoc(c *gin.Context) {
 		return
 	}
 
+	llmClient := llm.NewOllamaClient()
+
 	// 3. Parse TOC
-	sections, err := pdf.ParseTOC(tempFilePath)
+	sections, err := pdf.ParseTOC(tempFilePath, llmClient)
 	if err != nil {
 		response.OK = false
 		response.Message = "Failed to parse TOC (Index): " + err.Error()
@@ -78,8 +80,6 @@ func ProcessDesignDoc(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, response)
 		return
 	}
-
-	llmClient := llm.NewOllamaClient()
 	var processErrors []string
 	var successCount int
 

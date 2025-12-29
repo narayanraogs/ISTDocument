@@ -14,6 +14,7 @@ type Configuration struct {
 	BasePath       string `json:"BasePath"`
 	DeletePassword string `json:"DeletePassword"`
 	OllamaURL      string `json:"OllamaURL"`
+	OllamaModel    string `json:"OllamaModel"`
 }
 
 // Global Config variable
@@ -35,6 +36,10 @@ func ReadConfiguration(path string) error {
 
 	if Config.OllamaURL == "" {
 		Config.OllamaURL = "http://localhost:11434"
+	}
+
+	if Config.OllamaModel == "" {
+		Config.OllamaModel = "llama3"
 	}
 
 	fmt.Printf("Config: %+v\n ", Config)

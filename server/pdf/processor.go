@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -13,24 +12,26 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 )
 
-// ParseTOC scans the first few pages to find key sections.
-// Returns a map of Section Name -> Page Number.
-func ParseTOC(filePath string) (map[string]int, error) {
+// TOCParser defines an interface for identifying sections.
+// It matches the signature of llm.Client.IdentifySections.
+type TOCParser interface {
+	IdentifySections(tocText string) (map[string]int, error)
+}
+
+// ParseTOC scans the first 20 pages (or fewer) and uses the provided parser (LLM) to identify sections.
+func ParseTOC(filePath string, parser TOCParser) (map[string]int, error) {
 	f, r, err := pdf.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
-	sections := make(map[string]int)
-	tocMaxPages := 10 // Assumption: TOC is within first 10 pages
+	// Extract text from first 20 pages
+	var tocTextBuilder strings.Builder
+	tocMaxPages := 20
 	if r.NumPage() < tocMaxPages {
 		tocMaxPages = r.NumPage()
 	}
-
-	// Simple regex to find lines like "1. Introduction ....... 5" or "Introduction 5"
-	// This is brittle and might need the LLM fallback.
-	re := regexp.MustCompile(`(?i)(introduction|specifications|block diagram).*?(\d+)$`)
 
 	for pageIndex := 1; pageIndex <= tocMaxPages; pageIndex++ {
 		p := r.Page(pageIndex)
@@ -42,29 +43,17 @@ func ParseTOC(filePath string) (map[string]int, error) {
 		if err != nil {
 			continue
 		}
-
-		lines := strings.Split(content, "\n")
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			matches := re.FindStringSubmatch(line)
-			if len(matches) == 3 {
-				sectionName := strings.ToLower(matches[1])
-				pageStr := matches[2]
-				page, err := strconv.Atoi(pageStr)
-				if err == nil {
-					// Map recognized keys to standard keys
-					if strings.Contains(sectionName, "introduction") {
-						sections["Introduction"] = page
-					} else if strings.Contains(sectionName, "specifications") {
-						sections["Specifications"] = page
-					} else if strings.Contains(sectionName, "block diagram") {
-						sections["Block Diagram"] = page
-					}
-				}
-			}
-		}
+		tocTextBuilder.WriteString(content)
+		tocTextBuilder.WriteString("\n")
 	}
-	return sections, nil
+
+	fullText := tocTextBuilder.String()
+	if strings.TrimSpace(fullText) == "" {
+		return nil, fmt.Errorf("no text found in first %d pages", tocMaxPages)
+	}
+
+	// Use LLM to parse
+	return parser.IdentifySections(fullText)
 }
 
 // ExtractText extracts plain text from a specific page.

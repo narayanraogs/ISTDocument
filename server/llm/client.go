@@ -18,7 +18,7 @@ type OllamaClient struct {
 func NewOllamaClient() *OllamaClient {
 	return &OllamaClient{
 		BaseURL: config.Config.OllamaURL,
-		Model:   "llama3", // Default model, can be made configurable
+		Model:   config.Config.OllamaModel,
 	}
 }
 
@@ -99,23 +99,36 @@ func (c *OllamaClient) ExtractSpecifications(text string) (map[string]string, er
 	return specs, nil
 }
 
-func (c *OllamaClient) IdentifyBlockDiagramPage(tocText string) (int, error) {
-	// This might be tricky for an LLM to give just a number, but let's try.
-	prompt := fmt.Sprintf(`Analyze the following Table of Contents text. Find the page number for the "Block Diagram" or "System Block Diagram".
-	Return ONLY the page number as an integer. If not found, return -1.
+func (c *OllamaClient) IdentifySections(tocText string) (map[string]int, error) {
+	prompt := fmt.Sprintf(`Analyze the following text which contains the Table of Contents (TOC) of a document.
+	Identify the page numbers for the following sections:
+	1. Introduction
+	2. Specifications (or Subsystem Specifications, Technical Specifications)
+	3. Block Diagram (or System Block Diagram)
 
-	TOC:
+	Return ONLY a JSON object with keys "Introduction", "Specifications", "Block Diagram" and values as the integer page number.
+	If a section is not found, do not include it in the JSON.
+	Do not include markdown formatting, code blocks, or extra text. Just the raw JSON.
+
+	Text:
 	%s`, tocText)
 
 	response, err := c.generate(prompt)
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
 
-	var pageNum int
-	_, err = fmt.Sscanf(strings.TrimSpace(response), "%d", &pageNum)
-	if err != nil {
-		return -1, fmt.Errorf("failed to parse page number")
+	// Clean up response if it contains markdown code blocks
+	response = strings.TrimPrefix(response, "```json")
+	response = strings.TrimPrefix(response, "```")
+	response = strings.TrimSuffix(response, "```")
+	response = strings.TrimSpace(response)
+
+	var sections map[string]int
+	if err := json.Unmarshal([]byte(response), &sections); err != nil {
+		fmt.Printf("Failed to parse JSON sections: %v\nRaw Response: %s\n", err, response)
+		return nil, fmt.Errorf("failed to parse sections from LLM response")
 	}
-	return pageNum, nil
+
+	return sections, nil
 }
